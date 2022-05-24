@@ -18,10 +18,10 @@ package com.example.posedetector.objectdetector
 
 import android.content.Context
 import android.util.Log
+import com.example.posedetector.VisionProcessorBase
+import com.example.posedetector.helper.utils.GraphicOverlay
 import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.demo.GraphicOverlay
-import com.google.mlkit.vision.demo.kotlin.VisionProcessorBase
 import com.google.mlkit.vision.objects.DetectedObject
 import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.ObjectDetector

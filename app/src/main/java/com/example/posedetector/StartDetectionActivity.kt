@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -17,6 +16,8 @@ import com.example.posedetector.helper.currentDate
 import com.example.posedetector.helper.formatDateToString
 import com.example.posedetector.helper.getOutputDirectory
 import com.example.posedetector.helper.utils.BitmapUtils
+import com.example.posedetector.objectdetector.ObjectDetectorProcessor
+import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import java.io.File
 import java.io.IOException
 
@@ -26,7 +27,7 @@ class StartDetectionActivity : PermissionActivity() {
     private var imagePickerType = -1
     private var selectedImageUri: Uri? = null
     private var currentPhotoPath: String? = null
-    private var imageProcessor: VisionImageProcessor? = null
+    private var objectDetectorImageProcessor: VisionImageProcessor? = null
 
     companion object {
         const val IMAGE_PICKER_EXTENSION = "image/*"
@@ -148,6 +149,9 @@ class StartDetectionActivity : PermissionActivity() {
             "Try reload and detect image"
         )
         try {
+            if (selectedImageUri == null) {
+                return
+            }
             val imageBitmap =
                 BitmapUtils.getBitmapFromContentUri(contentResolver, selectedImageUri) ?: return
             binding.graphicOverlay.clear()
@@ -159,11 +163,11 @@ class StartDetectionActivity : PermissionActivity() {
             )
             binding.previewImage.setImageBitmap(resizedBitmap)
 
-            if (imageProcessor != null) {
+            if (objectDetectorImageProcessor != null) {
                 binding.graphicOverlay.setImageSourceInfo(
                     resizedBitmap.width, resizedBitmap.height, /* isFlipped= */false
                 )
-                imageProcessor!!.processBitmap(resizedBitmap, binding.graphicOverlay)
+                objectDetectorImageProcessor?.processBitmap(resizedBitmap, binding.graphicOverlay)
             } else {
                 Log.e(
                     TAG,
@@ -185,6 +189,15 @@ class StartDetectionActivity : PermissionActivity() {
                 TAG,
                 "Using Object Detector Processor"
             )
+            val builder: ObjectDetectorOptions.Builder =
+                ObjectDetectorOptions.Builder()
+                    .enableClassification()
+                    .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
+            objectDetectorImageProcessor =
+                ObjectDetectorProcessor(
+                    this,
+                    builder.build()
+                )
         } catch (e: Exception) {
             Log.e(
                 TAG,
@@ -200,17 +213,26 @@ class StartDetectionActivity : PermissionActivity() {
         }
     }
 
+
     public override fun onPause() {
         super.onPause()
-        imageProcessor?.run {
+        objectDetectorImageProcessor?.run {
             this.stop()
         }
     }
 
     public override fun onDestroy() {
         super.onDestroy()
-        imageProcessor?.run {
+        objectDetectorImageProcessor?.run {
             this.stop()
         }
     }
+
+    public override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "onResume")
+        createImageProcessor()
+        tryReloadAndDetectInImage()
+    }
+
 }
