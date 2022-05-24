@@ -110,18 +110,6 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
     override fun processBitmap(bitmap: Bitmap, graphicOverlay: GraphicOverlay) {
         val frameStartMs = SystemClock.elapsedRealtime()
 
-     /*   if (isMlImageEnabled(graphicOverlay.context)) {
-            val mlImage = BitmapMlImageBuilder(bitmap).build()
-            requestDetectInImage(
-                mlImage,
-                graphicOverlay,
-                *//* originalCameraImage= *//* null,
-                *//* shouldShowFps= *//* false,
-                frameStartMs
-            )
-            mlImage.close()
-            return
-        }*/
 
         requestDetectInImage(
             InputImage.fromBitmap(bitmap!!, 0),

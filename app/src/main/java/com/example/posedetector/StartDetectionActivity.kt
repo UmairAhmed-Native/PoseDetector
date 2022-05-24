@@ -17,9 +17,17 @@ import com.example.posedetector.helper.formatDateToString
 import com.example.posedetector.helper.getOutputDirectory
 import com.example.posedetector.helper.utils.BitmapUtils
 import com.example.posedetector.objectdetector.ObjectDetectorProcessor
+import com.google.android.gms.tasks.Task
+import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
+import com.google.mlkit.vision.pose.Pose
+import com.google.mlkit.vision.pose.PoseDetection
+import com.google.mlkit.vision.pose.PoseDetector
+import com.google.mlkit.vision.pose.PoseLandmark
+import com.google.mlkit.vision.pose.accurate.AccuratePoseDetectorOptions
 import java.io.File
 import java.io.IOException
+import kotlin.math.atan2
 
 class StartDetectionActivity : PermissionActivity() {
 
@@ -28,6 +36,7 @@ class StartDetectionActivity : PermissionActivity() {
     private var selectedImageUri: Uri? = null
     private var currentPhotoPath: String? = null
     private var objectDetectorImageProcessor: VisionImageProcessor? = null
+    private var poseDetector: PoseDetector? = null
 
     companion object {
         const val IMAGE_PICKER_EXTENSION = "image/*"
@@ -168,6 +177,7 @@ class StartDetectionActivity : PermissionActivity() {
                     resizedBitmap.width, resizedBitmap.height, /* isFlipped= */false
                 )
                 objectDetectorImageProcessor?.processBitmap(resizedBitmap, binding.graphicOverlay)
+                processPoseDetector(resizedBitmap)
             } else {
                 Log.e(
                     TAG,
@@ -183,7 +193,7 @@ class StartDetectionActivity : PermissionActivity() {
         }
     }
 
-    private fun createImageProcessor() {
+    private fun initializeObjectDetector() {
         try {
             Log.i(
                 TAG,
@@ -213,6 +223,59 @@ class StartDetectionActivity : PermissionActivity() {
         }
     }
 
+    private fun initializePoseDetector() {
+        val options = AccuratePoseDetectorOptions.Builder()
+            .setDetectorMode(AccuratePoseDetectorOptions.SINGLE_IMAGE_MODE)
+            .build()
+        poseDetector = PoseDetection.getClient(options)
+    }
+
+    private fun processPoseDetector(bitmap: Bitmap) {
+        poseDetector
+            ?.process(InputImage.fromBitmap(bitmap, 0))
+            ?.addOnSuccessListener { pose ->
+
+                val rightHipAngle = getAngle(
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_SHOULDER),
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_HIP),
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_KNEE)
+                )
+            }?.addOnFailureListener {
+                Log.d(TAG, it.localizedMessage)
+            }
+    }
+
+
+    private fun getAngle(
+        firstPoint: PoseLandmark?,
+        midPoint: PoseLandmark?,
+        lastPoint: PoseLandmark?
+    ): Double {
+        var result = 0.0
+        lastPoint?.let { lastPt ->
+            firstPoint?.let { firstPt ->
+                midPoint?.let { midPt ->
+                    result = Math.toDegrees(
+                        (atan2(
+                            lastPt.position.y - midPt.position.y,
+                            lastPt.position.x - midPt.position.x
+                        )
+                                - atan2(
+                            firstPt.position.y - midPt.position.y,
+                            firstPt.position.x - midPt.position.x
+                        )).toDouble()
+                    )
+
+                    result = Math.abs(result) // Angle should never be negative
+                    if (result > 180) {
+                        result = 360.0 - result // Always get the acute representation of the angle
+                    }
+                }
+            }
+        }
+
+        return result
+    }
 
     public override fun onPause() {
         super.onPause()
@@ -231,7 +294,8 @@ class StartDetectionActivity : PermissionActivity() {
     public override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume")
-        createImageProcessor()
+        initializeObjectDetector()
+        initializePoseDetector()
         tryReloadAndDetectInImage()
     }
 
