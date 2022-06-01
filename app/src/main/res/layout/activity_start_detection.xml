@@ -18,6 +18,15 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <com.example.posedetector.helper.utils.GraphicOverlay
+            android:id="@+id/graphic_overlay"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="@id/preview_image"
+            app:layout_constraintLeft_toLeftOf="@id/preview_image"
+            app:layout_constraintRight_toRightOf="@id/preview_image"
+            app:layout_constraintTop_toTopOf="@id/preview_image" />
+
         <Button
             android:id="@+id/btn_select_from_gallery"
             android:layout_width="0dp"

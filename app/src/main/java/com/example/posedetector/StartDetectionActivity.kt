@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -25,6 +26,7 @@ class StartDetectionActivity : PermissionActivity() {
     private var imagePickerType = -1
     private var selectedImageUri: Uri? = null
     private var currentPhotoPath: String? = null
+    private var imageProcessor: VisionImageProcessor? = null
 
     companion object {
         const val IMAGE_PICKER_EXTENSION = "image/*"
@@ -148,7 +150,7 @@ class StartDetectionActivity : PermissionActivity() {
         try {
             val imageBitmap =
                 BitmapUtils.getBitmapFromContentUri(contentResolver, selectedImageUri) ?: return
-
+            binding.graphicOverlay.clear()
             val resizedBitmap = Bitmap.createScaledBitmap(
                 imageBitmap,
                 (imageBitmap.width),
@@ -156,12 +158,59 @@ class StartDetectionActivity : PermissionActivity() {
                 true
             )
             binding.previewImage.setImageBitmap(resizedBitmap)
+
+            if (imageProcessor != null) {
+                binding.graphicOverlay.setImageSourceInfo(
+                    resizedBitmap.width, resizedBitmap.height, /* isFlipped= */false
+                )
+                imageProcessor!!.processBitmap(resizedBitmap, binding.graphicOverlay)
+            } else {
+                Log.e(
+                    TAG,
+                    "Null imageProcessor, please check adb logs for imageProcessor creation error"
+                )
+            }
         } catch (e: IOException) {
             Log.e(
                 TAG,
                 "Error retrieving saved image"
             )
             selectedImageUri = null
+        }
+    }
+
+    private fun createImageProcessor() {
+        try {
+            Log.i(
+                TAG,
+                "Using Object Detector Processor"
+            )
+        } catch (e: Exception) {
+            Log.e(
+                TAG,
+                "Can not create image processor: OBJECT DETECTION",
+                e
+            )
+            Toast.makeText(
+                applicationContext,
+                "Can not create image processor: " + e.message,
+                Toast.LENGTH_LONG
+            )
+                .show()
+        }
+    }
+
+    public override fun onPause() {
+        super.onPause()
+        imageProcessor?.run {
+            this.stop()
+        }
+    }
+
+    public override fun onDestroy() {
+        super.onDestroy()
+        imageProcessor?.run {
+            this.stop()
         }
     }
 }
