@@ -12,17 +12,15 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
-import com.example.posedetector.databinding.ActivityStartDetectionBinding
+import com.example.posedetector.databinding.ActivityStillImageDetectionBinding
 import com.example.posedetector.helper.currentDate
 import com.example.posedetector.helper.formatDateToString
 import com.example.posedetector.helper.getOutputDirectory
 import com.example.posedetector.helper.utils.BitmapUtils
 import com.example.posedetector.model.AngleInfo
 import com.example.posedetector.objectdetector.ObjectDetectorProcessor
-import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
-import com.google.mlkit.vision.pose.Pose
 import com.google.mlkit.vision.pose.PoseDetection
 import com.google.mlkit.vision.pose.PoseDetector
 import com.google.mlkit.vision.pose.PoseLandmark
@@ -31,12 +29,11 @@ import java.io.File
 import java.io.IOException
 import kotlin.math.abs
 import kotlin.math.atan2
-import kotlin.math.round
 import kotlin.math.roundToInt
 
-class StartDetectionActivity : PermissionActivity() {
+class StillImageDetectionActivity : PermissionActivity() {
 
-    private lateinit var binding: ActivityStartDetectionBinding
+    private lateinit var binding: ActivityStillImageDetectionBinding
     private var imagePickerType = -1
     private var selectedImageUri: Uri? = null
     private var currentPhotoPath: String? = null
@@ -53,7 +50,7 @@ class StartDetectionActivity : PermissionActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityStartDetectionBinding.inflate(layoutInflater)
+        binding = ActivityStillImageDetectionBinding.inflate(layoutInflater)
 
         setContentView(binding.root)
         binding.txtViewAngle.visibility = View.GONE

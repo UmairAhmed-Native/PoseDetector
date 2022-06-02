@@ -29,12 +29,14 @@
         android:theme="@style/Theme.PoseDetector"
         tools:targetApi="31">
         <activity
-            android:name=".StartDetectionActivity"
-            android:exported="false" />
+            android:name=".StillImageDetectionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:noHistory="true">
+            android:noHistory="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

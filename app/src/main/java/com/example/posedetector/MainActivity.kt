@@ -1,7 +1,6 @@
 package com.example.posedetector
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.example.posedetector.databinding.ActivityMainBinding
 
@@ -25,7 +24,7 @@ class MainActivity : PermissionActivity() {
         startActivity(
             Intent(
                 this@MainActivity,
-                StartDetectionActivity::class.java
+                StillImageDetectionActivity::class.java
             )
         )
     }
