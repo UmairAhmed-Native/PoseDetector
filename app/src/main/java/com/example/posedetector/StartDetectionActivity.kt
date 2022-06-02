@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
@@ -16,6 +17,7 @@ import com.example.posedetector.helper.currentDate
 import com.example.posedetector.helper.formatDateToString
 import com.example.posedetector.helper.getOutputDirectory
 import com.example.posedetector.helper.utils.BitmapUtils
+import com.example.posedetector.model.AngleInfo
 import com.example.posedetector.objectdetector.ObjectDetectorProcessor
 import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
@@ -27,7 +29,10 @@ import com.google.mlkit.vision.pose.PoseLandmark
 import com.google.mlkit.vision.pose.accurate.AccuratePoseDetectorOptions
 import java.io.File
 import java.io.IOException
+import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.round
+import kotlin.math.roundToInt
 
 class StartDetectionActivity : PermissionActivity() {
 
@@ -37,6 +42,8 @@ class StartDetectionActivity : PermissionActivity() {
     private var currentPhotoPath: String? = null
     private var objectDetectorImageProcessor: VisionImageProcessor? = null
     private var poseDetector: PoseDetector? = null
+    private var rightSidePoseAngleList = mutableListOf<AngleInfo>()
+    private var leftSidePoseAngleList = mutableListOf<AngleInfo>()
 
     companion object {
         const val IMAGE_PICKER_EXTENSION = "image/*"
@@ -49,7 +56,7 @@ class StartDetectionActivity : PermissionActivity() {
         binding = ActivityStartDetectionBinding.inflate(layoutInflater)
 
         setContentView(binding.root)
-
+        binding.txtViewAngle.visibility = View.GONE
         binding.btnSelectFromGallery.setOnClickListener {
             onGalleryListener()
         }
@@ -234,15 +241,116 @@ class StartDetectionActivity : PermissionActivity() {
         poseDetector
             ?.process(InputImage.fromBitmap(bitmap, 0))
             ?.addOnSuccessListener { pose ->
-
+                val allPoseLandmarks = pose.allPoseLandmarks
+                /*
+                *hip,
+                * shoulder,
+                * wrist
+                */
+                rightSidePoseAngleList.clear()
+                leftSidePoseAngleList.clear()
+                val rightWristAngle = getAngle(
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_THUMB),
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_WRIST),
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_ELBOW)
+                )
+                rightSidePoseAngleList.add(
+                    AngleInfo(
+                        angleName = "Wrist",
+                        angleValue = rightWristAngle
+                    )
+                )
+                val leftWristAngle = getAngle(
+                    pose.getPoseLandmark(PoseLandmark.LEFT_THUMB),
+                    pose.getPoseLandmark(PoseLandmark.LEFT_WRIST),
+                    pose.getPoseLandmark(PoseLandmark.LEFT_ELBOW)
+                )
+                leftSidePoseAngleList.add(
+                    AngleInfo(
+                        angleName = "Wrist",
+                        angleValue = leftWristAngle
+                    )
+                )
+                val rightElbowAngle = getAngle(
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_WRIST),
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_ELBOW),
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_SHOULDER)
+                )
+                rightSidePoseAngleList.add(
+                    AngleInfo(
+                        angleName = "Elbow",
+                        angleValue = rightElbowAngle
+                    )
+                )
+                val leftElbowAngle = getAngle(
+                    pose.getPoseLandmark(PoseLandmark.LEFT_WRIST),
+                    pose.getPoseLandmark(PoseLandmark.LEFT_ELBOW),
+                    pose.getPoseLandmark(PoseLandmark.LEFT_SHOULDER)
+                )
+                leftSidePoseAngleList.add(
+                    AngleInfo(
+                        angleName = "Elbow",
+                        angleValue = leftElbowAngle
+                    )
+                )
+                val rightShoulderAngle = getAngle(
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_ELBOW),
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_SHOULDER),
+                    pose.getPoseLandmark(PoseLandmark.RIGHT_HIP)
+                )
+                rightSidePoseAngleList.add(
+                    AngleInfo(
+                        angleName = "Shoulder",
+                        angleValue = rightShoulderAngle
+                    )
+                )
+                val leftShoulderAngle = getAngle(
+                    pose.getPoseLandmark(PoseLandmark.LEFT_ELBOW),
+                    pose.getPoseLandmark(PoseLandmark.LEFT_SHOULDER),
+                    pose.getPoseLandmark(PoseLandmark.LEFT_HIP)
+                )
+                leftSidePoseAngleList.add(
+                    AngleInfo(
+                        angleName = "Shoulder",
+                        angleValue = leftShoulderAngle
+                    )
+                )
                 val rightHipAngle = getAngle(
                     pose.getPoseLandmark(PoseLandmark.RIGHT_SHOULDER),
                     pose.getPoseLandmark(PoseLandmark.RIGHT_HIP),
                     pose.getPoseLandmark(PoseLandmark.RIGHT_KNEE)
                 )
+                rightSidePoseAngleList.add(
+                    AngleInfo(
+                        angleName = "Hip",
+                        angleValue = rightHipAngle
+                    )
+                )
+                val leftHipAngle = getAngle(
+                    pose.getPoseLandmark(PoseLandmark.LEFT_SHOULDER),
+                    pose.getPoseLandmark(PoseLandmark.LEFT_HIP),
+                    pose.getPoseLandmark(PoseLandmark.LEFT_KNEE)
+                )
+                leftSidePoseAngleList.add(
+                    AngleInfo(
+                        angleName = "Hip",
+                        angleValue = leftHipAngle
+                    )
+                )
+                binding.txtViewAngle.visibility = View.VISIBLE
+
+                binding.txtViewAngle.setOnClickListener {
+                    showAnglesDetail()
+                }
             }?.addOnFailureListener {
                 Log.d(TAG, it.localizedMessage)
             }
+    }
+
+    private fun showAnglesDetail() {
+        val angleInfoDialog = AngleInfoDialog(rightSidePoseAngleList, leftSidePoseAngleList)
+        angleInfoDialog.show(supportFragmentManager, "angle_info_dialog")
+
     }
 
 
@@ -250,25 +358,28 @@ class StartDetectionActivity : PermissionActivity() {
         firstPoint: PoseLandmark?,
         midPoint: PoseLandmark?,
         lastPoint: PoseLandmark?
-    ): Double {
-        var result = 0.0
+    ): Int {
+        var result = 0
         lastPoint?.let { lastPt ->
             firstPoint?.let { firstPt ->
                 midPoint?.let { midPt ->
                     result = Math.toDegrees(
-                        (atan2(
-                            lastPt.position.y - midPt.position.y,
-                            lastPt.position.x - midPt.position.x
-                        )
-                                - atan2(
-                            firstPt.position.y - midPt.position.y,
-                            firstPt.position.x - midPt.position.x
-                        )).toDouble()
-                    )
+                        (
+                                atan2(
+                                    lastPt.position.y - midPt.position.y,
+                                    lastPt.position.x - midPt.position.x
+                                )
+                                        - atan2(
+                                    firstPt.position.y - midPt.position.y,
+                                    firstPt.position.x - midPt.position.x
+                                )
+                                ).toDouble()
+                    ).roundToInt()
 
-                    result = Math.abs(result) // Angle should never be negative
+                    result = abs(result) // Angle should never be negative
                     if (result > 180) {
-                        result = 360.0 - result // Always get the acute representation of the angle
+                        result =
+                            (360 - result)// Always get the acute representation of the angle
                     }
                 }
             }
