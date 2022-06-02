@@ -13,14 +13,30 @@ class MainActivity : PermissionActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.btnStart.setOnClickListener {
+        binding.btnDetectOnStillImage.setOnClickListener {
             checkWriteReadCameraPermissions {
-                navigateToStartDetection()
+                navigateToStillImageDetection()
             }
+        }
+
+        binding.btnDetectOnLivePreview.setOnClickListener {
+            checkWriteReadCameraPermissions {
+                navigateToLivePreviewDetection()
+            }
+
         }
     }
 
-    private fun navigateToStartDetection() {
+    private fun navigateToLivePreviewDetection() {
+        startActivity(
+            Intent(
+                this@MainActivity,
+                LivePreviewActivity::class.java
+            )
+        )
+    }
+
+    private fun navigateToStillImageDetection() {
         startActivity(
             Intent(
                 this@MainActivity,
