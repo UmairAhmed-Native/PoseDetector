@@ -3,6 +3,7 @@ package com.example.posedetector
 import android.Manifest
 import android.os.Bundle
 import android.os.PersistableBundle
+import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
 import com.example.posedetector.helper.permission.PermissionHelper
 import com.example.posedetector.helper.permission.RunTimePermissionListener
@@ -36,6 +37,17 @@ open class PermissionActivity : AppCompatActivity() {
 
                 }
             })
+
+    }
+
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        @NonNull permissions: Array<String>,
+        @NonNull grantResults: IntArray,
+    ) {
+        permissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
     }
 }
