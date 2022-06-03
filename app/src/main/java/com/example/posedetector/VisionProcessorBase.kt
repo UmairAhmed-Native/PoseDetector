@@ -331,14 +331,14 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
                         graphicOverlay.add(CameraImageGraphic(graphicOverlay, originalCameraImage))
                     }
                     this@VisionProcessorBase.onSuccess(results, graphicOverlay)
-                        graphicOverlay.add(
-                            InferenceInfoGraphic(
-                                graphicOverlay,
-                                currentFrameLatencyMs,
-                                currentDetectorLatencyMs,
-                                if (shouldShowFps) framesPerSecond else null
-                            )
-                        )
+//                        graphicOverlay.add(
+//                            InferenceInfoGraphic(
+//                                graphicOverlay,
+//                                currentFrameLatencyMs,
+//                                currentDetectorLatencyMs,
+//                                if (shouldShowFps) framesPerSecond else null
+//                            )
+//                        )
 
                     graphicOverlay.postInvalidate()
                 }

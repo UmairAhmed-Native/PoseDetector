@@ -9,13 +9,17 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.example.posedetector.databinding.ActivityLivePreviewBinding
+import com.example.posedetector.helper.getAngle
+import com.example.posedetector.model.AngleInfo
 import com.example.posedetector.objectdetector.ObjectDetectorProcessor
 import com.google.mlkit.common.MlKitException
-import com.google.mlkit.common.model.LocalModel
+import com.example.posedetector.posedetector.PoseDetectorProcessor
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
+import com.google.mlkit.vision.pose.Pose
+import com.google.mlkit.vision.pose.PoseLandmark
+import com.google.mlkit.vision.pose.accurate.AccuratePoseDetectorOptions
 
 class LivePreviewActivity : PermissionActivity() {
 
@@ -28,7 +32,8 @@ class LivePreviewActivity : PermissionActivity() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var previewUseCase: Preview? = null
     private var analysisUseCase: ImageAnalysis? = null
-    private var imageProcessor: VisionImageProcessor? = null
+    private var objectDetectorProcessing: VisionImageProcessor? = null
+    private var poseDetectorProcessing: VisionImageProcessor? = null
     private var needUpdateGraphicOverlayImageSourceInfo = false
     private var cameraSelector: CameraSelector? = null
 
@@ -83,21 +88,37 @@ class LivePreviewActivity : PermissionActivity() {
         if (analysisUseCase != null) {
             cameraProvider!!.unbind(analysisUseCase)
         }
-        if (imageProcessor != null) {
-            imageProcessor!!.stop()
+        if (objectDetectorProcessing != null) {
+            objectDetectorProcessing!!.stop()
         }
 
         try {
             Log.i(TAG, "Using Object Detector Processor")
-            val builder: ObjectDetectorOptions.Builder =
+            val objectDetectorBuilder: ObjectDetectorOptions.Builder =
                 ObjectDetectorOptions.Builder()
                     .enableClassification()
                     .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-            imageProcessor =
+            objectDetectorProcessing =
                 ObjectDetectorProcessor(
                     this,
-                    builder.build()
+                    objectDetectorBuilder.build()
                 )
+            val poseDetectorBuilder = AccuratePoseDetectorOptions.Builder()
+                .setDetectorMode(AccuratePoseDetectorOptions.STREAM_MODE)
+            poseDetectorBuilder.setPreferredHardwareConfigs(AccuratePoseDetectorOptions.CPU_GPU)
+            poseDetectorProcessing =
+                PoseDetectorProcessor(
+                    this,
+                    poseDetectorBuilder.build(),
+                    showInFrameLikelihood = true,
+                    visualizeZ = true,
+                    rescaleZForVisualization = true,
+                    runClassification = false,
+                    isStreamMode = true
+                )
+            (poseDetectorProcessing as PoseDetectorProcessor).poseDetectorSuccession =
+                ::poseDetection
+
         } catch (e: Exception) {
             Log.e(TAG, "Can not create image processor: ObjectDetectorProcessor", e)
             Toast.makeText(
@@ -117,34 +138,35 @@ class LivePreviewActivity : PermissionActivity() {
         analysisUseCase?.setAnalyzer(
             // imageProcessor.processImageProxy will use another thread to run the detection underneath,
             // thus we can just runs the analyzer itself on main thread.
-            ContextCompat.getMainExecutor(this),
-            ImageAnalysis.Analyzer { imageProxy: ImageProxy ->
-                if (needUpdateGraphicOverlayImageSourceInfo) {
-                    val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-                    if (rotationDegrees == 0 || rotationDegrees == 180) {
-                        binding.graphicOverlay.setImageSourceInfo(
-                            imageProxy.width,
-                            imageProxy.height,
-                            false
-                        )
-                    } else {
-                        binding.graphicOverlay.setImageSourceInfo(
-                            imageProxy.height,
-                            imageProxy.width,
-                            false
-                        )
-                    }
-                    needUpdateGraphicOverlayImageSourceInfo = false
+            ContextCompat.getMainExecutor(this)
+        ) { imageProxy: ImageProxy ->
+            if (needUpdateGraphicOverlayImageSourceInfo) {
+                val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+                if (rotationDegrees == 0 || rotationDegrees == 180) {
+                    binding.graphicOverlay.setImageSourceInfo(
+                        imageProxy.width,
+                        imageProxy.height,
+                        false
+                    )
+                } else {
+                    binding.graphicOverlay.setImageSourceInfo(
+                        imageProxy.height,
+                        imageProxy.width,
+                        false
+                    )
                 }
-                try {
-                    imageProcessor!!.processImageProxy(imageProxy,   binding.graphicOverlay)
-                } catch (e: MlKitException) {
-                    Log.e(TAG, "Failed to process image. Error: " + e.localizedMessage)
-                    Toast.makeText(applicationContext, e.localizedMessage, Toast.LENGTH_SHORT)
-                        .show()
-                }
+                needUpdateGraphicOverlayImageSourceInfo = false
             }
-        )
+            try {
+                objectDetectorProcessing?.processImageProxy(imageProxy, binding.graphicOverlay)
+                poseDetectorProcessing?.processImageProxy(imageProxy, binding.graphicOverlay)
+
+            } catch (e: MlKitException) {
+                Log.e(TAG, "Failed to process image. Error: " + e.localizedMessage)
+                Toast.makeText(applicationContext, e.localizedMessage, Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
         cameraProvider!!.bindToLifecycle(/* lifecycleOwner= */ this,
             cameraSelector!!,
             analysisUseCase
@@ -159,11 +181,67 @@ class LivePreviewActivity : PermissionActivity() {
     override fun onPause() {
         super.onPause()
 
-        imageProcessor?.run { this.stop() }
+        objectDetectorProcessing?.run { this.stop() }
     }
 
     public override fun onDestroy() {
         super.onDestroy()
-        imageProcessor?.run { this.stop() }
+        objectDetectorProcessing?.run { this.stop() }
+    }
+
+
+    private fun poseDetection(pose: Pose?) {
+        pose?.let { _pose ->
+
+            binding.txtWristLeftAngle.text = getAngle(
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_THUMB),
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_WRIST),
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_ELBOW)
+            ).toString()
+
+            binding.txtWristRightAngle.text = getAngle(
+                _pose.getPoseLandmark(PoseLandmark.LEFT_THUMB),
+                _pose.getPoseLandmark(PoseLandmark.LEFT_WRIST),
+                _pose.getPoseLandmark(PoseLandmark.LEFT_ELBOW)
+            ).toString()
+
+            binding.txtElbowLeftAngle.text = getAngle(
+                _pose.getPoseLandmark(PoseLandmark.LEFT_WRIST),
+                _pose.getPoseLandmark(PoseLandmark.LEFT_ELBOW),
+                _pose.getPoseLandmark(PoseLandmark.LEFT_SHOULDER)
+            ).toString()
+
+            binding.txtElbowRightAngle.text = getAngle(
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_WRIST),
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_ELBOW),
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_SHOULDER)
+            ).toString()
+
+            binding.txtShoulderLeftAngle.text = getAngle(
+                _pose.getPoseLandmark(PoseLandmark.LEFT_ELBOW),
+                _pose.getPoseLandmark(PoseLandmark.LEFT_SHOULDER),
+                _pose.getPoseLandmark(PoseLandmark.LEFT_HIP)
+            ).toString()
+
+            binding.txtShoulderRightAngle.text = getAngle(
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_ELBOW),
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_SHOULDER),
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_HIP)
+            ).toString()
+
+            binding.txtHipLeftAngle.text = getAngle(
+                _pose.getPoseLandmark(PoseLandmark.LEFT_SHOULDER),
+                _pose.getPoseLandmark(PoseLandmark.LEFT_HIP),
+                _pose.getPoseLandmark(PoseLandmark.LEFT_KNEE)
+            ).toString()
+
+            binding.txtHipRightAngle.text = getAngle(
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_SHOULDER),
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_HIP),
+                _pose.getPoseLandmark(PoseLandmark.RIGHT_KNEE)
+            ).toString()
+
+
+        }
     }
 }

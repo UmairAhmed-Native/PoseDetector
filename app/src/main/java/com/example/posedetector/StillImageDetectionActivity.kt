@@ -15,6 +15,7 @@ import androidx.core.net.toUri
 import com.example.posedetector.databinding.ActivityStillImageDetectionBinding
 import com.example.posedetector.helper.currentDate
 import com.example.posedetector.helper.formatDateToString
+import com.example.posedetector.helper.getAngle
 import com.example.posedetector.helper.getOutputDirectory
 import com.example.posedetector.helper.utils.BitmapUtils
 import com.example.posedetector.model.AngleInfo
@@ -350,40 +351,6 @@ class StillImageDetectionActivity : PermissionActivity() {
 
     }
 
-
-    private fun getAngle(
-        firstPoint: PoseLandmark?,
-        midPoint: PoseLandmark?,
-        lastPoint: PoseLandmark?
-    ): Int {
-        var result = 0
-        lastPoint?.let { lastPt ->
-            firstPoint?.let { firstPt ->
-                midPoint?.let { midPt ->
-                    result = Math.toDegrees(
-                        (
-                                atan2(
-                                    lastPt.position.y - midPt.position.y,
-                                    lastPt.position.x - midPt.position.x
-                                )
-                                        - atan2(
-                                    firstPt.position.y - midPt.position.y,
-                                    firstPt.position.x - midPt.position.x
-                                )
-                                ).toDouble()
-                    ).roundToInt()
-
-                    result = abs(result) // Angle should never be negative
-                    if (result > 180) {
-                        result =
-                            (360 - result)// Always get the acute representation of the angle
-                    }
-                }
-            }
-        }
-
-        return result
-    }
 
     public override fun onPause() {
         super.onPause()

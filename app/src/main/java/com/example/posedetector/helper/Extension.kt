@@ -3,9 +3,13 @@ package com.example.posedetector.helper
 import android.app.Activity
 import android.content.Context
 import com.example.posedetector.R
+import com.google.mlkit.vision.pose.PoseLandmark
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.roundToInt
 
 
 fun formatDateToString(time: Date?, formate: String): String {
@@ -27,4 +31,39 @@ fun getOutputDirectory(context: Context, activity: Activity): File {
     }
     return if(mediaDir != null && mediaDir.exists())
         mediaDir else appContext.filesDir
+}
+
+
+fun getAngle(
+    firstPoint: PoseLandmark?,
+    midPoint: PoseLandmark?,
+    lastPoint: PoseLandmark?
+): Int {
+    var result = 0
+    lastPoint?.let { lastPt ->
+        firstPoint?.let { firstPt ->
+            midPoint?.let { midPt ->
+                result = Math.toDegrees(
+                    (
+                            atan2(
+                                lastPt.position.y - midPt.position.y,
+                                lastPt.position.x - midPt.position.x
+                            )
+                                    - atan2(
+                                firstPt.position.y - midPt.position.y,
+                                firstPt.position.x - midPt.position.x
+                            )
+                            ).toDouble()
+                ).roundToInt()
+
+                result = abs(result) // Angle should never be negative
+                if (result > 180) {
+                    result =
+                        (360 - result)// Always get the acute representation of the angle
+                }
+            }
+        }
+    }
+
+    return result
 }

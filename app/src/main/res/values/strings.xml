@@ -3,4 +3,10 @@
     <string name="start">Start</string>
     <string name="start_detection_on_still_image">Start Detection on Still Image</string>
     <string name="start_detection_on_live_preview">Start Detection on Live Preview</string>
+    <string name="left_angles">Left Angles</string>
+    <string name="right_angles">Right Angles</string>
+    <string name="elbow">Elbow</string>
+    <string name="shoulder">Shoulder</string>
+    <string name="hip">Hip</string>
+    <string name="wrist">Wrist</string>
 </resources>

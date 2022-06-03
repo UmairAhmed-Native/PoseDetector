@@ -22,6 +22,199 @@
             app:layout_constraintLeft_toLeftOf="@id/preview_view"
             app:layout_constraintRight_toRightOf="@id/preview_view"
             app:layout_constraintTop_toTopOf="@id/preview_view" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:background="@drawable/transparent_gradient_drawable"
+            android:paddingTop="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <TextView
+                android:id="@+id/txt_body_part"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toStartOf="@id/txt_left_angle"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/txt_left_angle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:text="@string/left_angles"
+                android:textColor="@color/white"
+                app:layout_constraintEnd_toStartOf="@id/txt_right_angle"
+                app:layout_constraintStart_toEndOf="@id/txt_body_part"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/txt_right_angle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:text="@string/right_angles"
+                android:textColor="@color/white"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/txt_left_angle"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/txt_wrist"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center_vertical"
+                android:text="@string/wrist"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toTopOf="@id/txt_elbow"
+                app:layout_constraintEnd_toEndOf="@id/txt_body_part"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txt_body_part" />
+
+            <TextView
+                android:id="@+id/txt_wrist_left_angle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="@id/txt_wrist"
+                app:layout_constraintEnd_toEndOf="@id/txt_left_angle"
+                app:layout_constraintStart_toStartOf="@id/txt_left_angle"
+                app:layout_constraintTop_toTopOf="@id/txt_wrist" />
+
+            <TextView
+                android:id="@+id/txt_wrist_right_angle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="@id/txt_wrist_left_angle"
+                app:layout_constraintEnd_toEndOf="@id/txt_right_angle"
+                app:layout_constraintStart_toStartOf="@id/txt_right_angle"
+                app:layout_constraintTop_toTopOf="@id/txt_wrist_left_angle" />
+
+
+            <TextView
+                android:id="@+id/txt_elbow"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center_vertical"
+                android:text="@string/elbow"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toTopOf="@id/txt_shoulder"
+                app:layout_constraintEnd_toEndOf="@id/txt_body_part"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txt_wrist" />
+
+            <TextView
+                android:id="@+id/txt_elbow_left_angle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="@id/txt_elbow"
+                app:layout_constraintEnd_toEndOf="@id/txt_wrist_left_angle"
+                app:layout_constraintStart_toStartOf="@id/txt_wrist_left_angle"
+                app:layout_constraintTop_toTopOf="@id/txt_elbow" />
+
+            <TextView
+                android:id="@+id/txt_elbow_right_angle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="@id/txt_elbow_left_angle"
+                app:layout_constraintEnd_toEndOf="@id/txt_wrist_right_angle"
+                app:layout_constraintStart_toStartOf="@id/txt_wrist_right_angle"
+                app:layout_constraintTop_toTopOf="@id/txt_elbow_left_angle" />
+
+            <TextView
+                android:id="@+id/txt_shoulder"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center_vertical"
+                android:text="@string/shoulder"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toTopOf="@id/txt_hips"
+                app:layout_constraintEnd_toEndOf="@id/txt_elbow"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txt_elbow" />
+
+            <TextView
+                android:id="@+id/txt_shoulder_left_angle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="@id/txt_shoulder"
+                app:layout_constraintEnd_toEndOf="@id/txt_elbow_left_angle"
+                app:layout_constraintStart_toStartOf="@id/txt_elbow_left_angle"
+                app:layout_constraintTop_toTopOf="@id/txt_shoulder" />
+
+            <TextView
+                android:id="@+id/txt_shoulder_right_angle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="@id/txt_shoulder_left_angle"
+                app:layout_constraintEnd_toEndOf="@id/txt_elbow_right_angle"
+                app:layout_constraintStart_toStartOf="@id/txt_elbow_right_angle"
+                app:layout_constraintTop_toTopOf="@id/txt_shoulder_left_angle" />
+
+
+            <TextView
+                android:id="@+id/txt_hips"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center_vertical"
+                android:text="@string/hip"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="@id/txt_shoulder"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txt_shoulder" />
+
+            <TextView
+                android:id="@+id/txt_hip_left_angle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="@id/txt_hips"
+                app:layout_constraintEnd_toEndOf="@id/txt_shoulder_left_angle"
+                app:layout_constraintStart_toStartOf="@id/txt_shoulder_left_angle"
+                app:layout_constraintTop_toTopOf="@id/txt_hips" />
+
+            <TextView
+                android:id="@+id/txt_hip_right_angle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="@id/txt_hip_left_angle"
+                app:layout_constraintEnd_toEndOf="@id/txt_shoulder_right_angle"
+                app:layout_constraintStart_toStartOf="@id/txt_shoulder_right_angle"
+                app:layout_constraintTop_toTopOf="@id/txt_hip_left_angle" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </layout>
