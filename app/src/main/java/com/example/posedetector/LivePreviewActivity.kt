@@ -9,10 +9,12 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.example.posedetector.databinding.ActivityLivePreviewBinding
 import com.example.posedetector.objectdetector.ObjectDetectorProcessor
 import com.google.mlkit.common.MlKitException
+import com.google.mlkit.common.model.LocalModel
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 
 class LivePreviewActivity : PermissionActivity() {
@@ -24,51 +26,53 @@ class LivePreviewActivity : PermissionActivity() {
     private lateinit var binding: ActivityLivePreviewBinding
     private val livePreviewViewModel: LivePreviewViewModel by viewModels()
     private var cameraProvider: ProcessCameraProvider? = null
-    private var cameraPreview: Preview? = null
+    private var previewUseCase: Preview? = null
     private var analysisUseCase: ImageAnalysis? = null
     private var imageProcessor: VisionImageProcessor? = null
-    private var objectDetectorImageProcessor: VisionImageProcessor? = null
     private var needUpdateGraphicOverlayImageSourceInfo = false
-    private lateinit var cameraSelector:CameraSelector
+    private var cameraSelector: CameraSelector? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLivePreviewBinding.inflate(layoutInflater)
         setContentView(binding.root)
-       cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+        cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         livePreviewViewModel.getProcessCameraProvider(this@LivePreviewActivity)
             .observe(
                 this
             ) { provider ->
                 cameraProvider = provider
-                initializeObjectDetector()
-                bindUnbindAllCameraUseCases()
+                bindAllCameraUseCases()
             }
     }
 
-    private fun bindUnbindAllCameraUseCases() {
+    private fun bindAllCameraUseCases() {
         if (cameraProvider != null) {
             // As required by CameraX API, unbinds all use cases before trying to re-bind any of them.
             cameraProvider?.unbindAll()
-            bindCamera()
+            bindPreviewUseCase()
             bindAnalysisUseCase()
         }
     }
 
-    private fun bindCamera() {
+    private fun bindPreviewUseCase() {
+        /*  if (!PreferenceUtils.isCameraLiveViewportEnabled(this)) {
+              return
+          }*/
         if (cameraProvider == null) {
             return
         }
-        if (cameraPreview != null) {
-            cameraProvider!!.unbind(cameraPreview)
+        if (previewUseCase != null) {
+            cameraProvider!!.unbind(previewUseCase)
         }
 
         val builder = Preview.Builder()
-        cameraPreview = builder.build()
-        cameraPreview?.setSurfaceProvider(binding.previewView.surfaceProvider)
+        previewUseCase = builder.build()
+        previewUseCase?.setSurfaceProvider(binding.previewView.surfaceProvider)
         cameraProvider?.bindToLifecycle(/* lifecycleOwner= */ this,
-            cameraSelector,
-            cameraPreview
+            cameraSelector!!,
+            previewUseCase
         )
     }
 
@@ -77,10 +81,32 @@ class LivePreviewActivity : PermissionActivity() {
             return
         }
         if (analysisUseCase != null) {
-            cameraProvider?.unbind(analysisUseCase)
+            cameraProvider!!.unbind(analysisUseCase)
         }
         if (imageProcessor != null) {
             imageProcessor!!.stop()
+        }
+
+        try {
+            Log.i(TAG, "Using Object Detector Processor")
+            val builder: ObjectDetectorOptions.Builder =
+                ObjectDetectorOptions.Builder()
+                    .enableClassification()
+                    .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+            imageProcessor =
+                ObjectDetectorProcessor(
+                    this,
+                    builder.build()
+                )
+        } catch (e: Exception) {
+            Log.e(TAG, "Can not create image processor: ObjectDetectorProcessor", e)
+            Toast.makeText(
+                applicationContext,
+                "Can not create image processor: " + e.localizedMessage,
+                Toast.LENGTH_LONG
+            )
+                .show()
+            return
         }
 
         val builder = ImageAnalysis.Builder()
@@ -91,71 +117,43 @@ class LivePreviewActivity : PermissionActivity() {
         analysisUseCase?.setAnalyzer(
             // imageProcessor.processImageProxy will use another thread to run the detection underneath,
             // thus we can just runs the analyzer itself on main thread.
-            ContextCompat.getMainExecutor(this)
-        ) { imageProxy: ImageProxy ->
-            if (needUpdateGraphicOverlayImageSourceInfo) {
-                val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-                if (rotationDegrees == 0 || rotationDegrees == 180) {
-                    binding.graphicOverlay.setImageSourceInfo(
-                        imageProxy.width,
-                        imageProxy.height,
-                        false
-                    )
-                } else {
-                    binding.graphicOverlay.setImageSourceInfo(
-                        imageProxy.height,
-                        imageProxy.width,
-                        false
-                    )
+            ContextCompat.getMainExecutor(this),
+            ImageAnalysis.Analyzer { imageProxy: ImageProxy ->
+                if (needUpdateGraphicOverlayImageSourceInfo) {
+                    val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+                    if (rotationDegrees == 0 || rotationDegrees == 180) {
+                        binding.graphicOverlay.setImageSourceInfo(
+                            imageProxy.width,
+                            imageProxy.height,
+                            false
+                        )
+                    } else {
+                        binding.graphicOverlay.setImageSourceInfo(
+                            imageProxy.height,
+                            imageProxy.width,
+                            false
+                        )
+                    }
+                    needUpdateGraphicOverlayImageSourceInfo = false
                 }
-                needUpdateGraphicOverlayImageSourceInfo = false
+                try {
+                    imageProcessor!!.processImageProxy(imageProxy,   binding.graphicOverlay)
+                } catch (e: MlKitException) {
+                    Log.e(TAG, "Failed to process image. Error: " + e.localizedMessage)
+                    Toast.makeText(applicationContext, e.localizedMessage, Toast.LENGTH_SHORT)
+                        .show()
+                }
             }
-            try {
-                imageProcessor?.processImageProxy(imageProxy, binding.graphicOverlay)
-            } catch (e: MlKitException) {
-                Log.e(TAG, "Failed to process image. Error: " + e.localizedMessage)
-                Toast.makeText(applicationContext, e.localizedMessage, Toast.LENGTH_SHORT).show()
-            }
-        }
-        cameraProvider?.bindToLifecycle(/* lifecycleOwner= */
-            this, cameraSelector, analysisUseCase)
-
-    }
-
-    private fun initializeObjectDetector() {
-        try {
-            Log.i(
-                TAG,
-                "Using Object Detector Processor"
-            )
-            val builder: ObjectDetectorOptions.Builder =
-                ObjectDetectorOptions.Builder()
-                    .enableClassification()
-                    .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-            objectDetectorImageProcessor =
-                ObjectDetectorProcessor(
-                    this,
-                    builder.build()
-                )
-        } catch (e: Exception) {
-            Log.e(
-                TAG,
-                "Can not create image processor: OBJECT DETECTION",
-                e
-            )
-            Toast.makeText(
-                applicationContext,
-                "Can not create image processor: " + e.message,
-                Toast.LENGTH_LONG
-            )
-                .show()
-        }
+        )
+        cameraProvider!!.bindToLifecycle(/* lifecycleOwner= */ this,
+            cameraSelector!!,
+            analysisUseCase
+        )
     }
 
     public override fun onResume() {
         super.onResume()
-        initializeObjectDetector()
-        bindUnbindAllCameraUseCases()
+        bindAllCameraUseCases()
     }
 
     override fun onPause() {

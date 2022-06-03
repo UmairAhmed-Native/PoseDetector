@@ -203,7 +203,8 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
         if (isShutdown) {
             return
         }
-        val bitmap: Bitmap? =  BitmapUtils.getBitmap(image)
+        val bitmap: Bitmap? =
+            BitmapUtils.getBitmap(image)
 
         if (isMlImageEnabled(graphicOverlay.context)) {
             val mlImage =
@@ -330,7 +331,6 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
                         graphicOverlay.add(CameraImageGraphic(graphicOverlay, originalCameraImage))
                     }
                     this@VisionProcessorBase.onSuccess(results, graphicOverlay)
-                   /* if (!PreferenceUtils.shouldHideDetectionInfo(graphicOverlay.context)) {
                         graphicOverlay.add(
                             InferenceInfoGraphic(
                                 graphicOverlay,
@@ -339,7 +339,7 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
                                 if (shouldShowFps) framesPerSecond else null
                             )
                         )
-                    }*/
+
                     graphicOverlay.postInvalidate()
                 }
             )
