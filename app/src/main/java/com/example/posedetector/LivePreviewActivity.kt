@@ -1,5 +1,6 @@
 package com.example.posedetector
 
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -16,8 +17,12 @@ import com.example.posedetector.model.AngleInfo
 import com.example.posedetector.objectdetector.ObjectDetectorProcessor
 import com.google.mlkit.common.MlKitException
 import com.example.posedetector.posedetector.PoseDetectorProcessor
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.objects.DetectedObject
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.google.mlkit.vision.pose.Pose
+import com.google.mlkit.vision.pose.PoseDetection
+import com.google.mlkit.vision.pose.PoseDetector
 import com.google.mlkit.vision.pose.PoseLandmark
 import com.google.mlkit.vision.pose.accurate.AccuratePoseDetectorOptions
 
@@ -36,6 +41,7 @@ class LivePreviewActivity : PermissionActivity() {
     private var poseDetectorProcessing: VisionImageProcessor? = null
     private var needUpdateGraphicOverlayImageSourceInfo = false
     private var cameraSelector: CameraSelector? = null
+    private var poseDetector: PoseDetector? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -103,21 +109,8 @@ class LivePreviewActivity : PermissionActivity() {
                     this,
                     objectDetectorBuilder.build()
                 )
-            val poseDetectorBuilder = AccuratePoseDetectorOptions.Builder()
-                .setDetectorMode(AccuratePoseDetectorOptions.STREAM_MODE)
-            poseDetectorBuilder.setPreferredHardwareConfigs(AccuratePoseDetectorOptions.CPU_GPU)
-            poseDetectorProcessing =
-                PoseDetectorProcessor(
-                    this,
-                    poseDetectorBuilder.build(),
-                    showInFrameLikelihood = true,
-                    visualizeZ = true,
-                    rescaleZForVisualization = true,
-                    runClassification = false,
-                    isStreamMode = true
-                )
-            (poseDetectorProcessing as PoseDetectorProcessor).poseDetectorSuccession =
-                ::poseDetection
+            (objectDetectorProcessing as ObjectDetectorProcessor).objectDetectorSuccession =
+                ::objectDetection
 
         } catch (e: Exception) {
             Log.e(TAG, "Can not create image processor: ObjectDetectorProcessor", e)
@@ -159,7 +152,7 @@ class LivePreviewActivity : PermissionActivity() {
             }
             try {
                 objectDetectorProcessing?.processImageProxy(imageProxy, binding.graphicOverlay)
-                poseDetectorProcessing?.processImageProxy(imageProxy, binding.graphicOverlay)
+//                poseDetectorProcessing?.processImageProxy(imageProxy, binding.graphicOverlay)
 
             } catch (e: MlKitException) {
                 Log.e(TAG, "Failed to process image. Error: " + e.localizedMessage)
@@ -175,6 +168,7 @@ class LivePreviewActivity : PermissionActivity() {
 
     public override fun onResume() {
         super.onResume()
+        initializePoseDetector()
         bindAllCameraUseCases()
     }
 
@@ -182,13 +176,29 @@ class LivePreviewActivity : PermissionActivity() {
         super.onPause()
 
         objectDetectorProcessing?.run { this.stop() }
+        poseDetectorProcessing?.run { this.stop() }
     }
 
     public override fun onDestroy() {
         super.onDestroy()
         objectDetectorProcessing?.run { this.stop() }
+        poseDetectorProcessing?.run { this.stop() }
     }
 
+    private fun objectDetection(originalCameraImage: Bitmap?) {
+        originalCameraImage?.let {
+            poseDetection(it)
+        }
+    }
+
+    private fun poseDetection(bitmap: Bitmap) {
+        poseDetector
+            ?.process(InputImage.fromBitmap(bitmap, 0))
+            ?.addOnSuccessListener { pose ->
+
+                poseDetection(pose)
+            }
+    }
 
     private fun poseDetection(pose: Pose?) {
         pose?.let { _pose ->
@@ -243,5 +253,13 @@ class LivePreviewActivity : PermissionActivity() {
 
 
         }
+    }
+
+
+    private fun initializePoseDetector() {
+        val poseDetectorBuilder = AccuratePoseDetectorOptions.Builder()
+            .setDetectorMode(AccuratePoseDetectorOptions.STREAM_MODE)
+
+        poseDetector = PoseDetection.getClient(poseDetectorBuilder.build())
     }
 }

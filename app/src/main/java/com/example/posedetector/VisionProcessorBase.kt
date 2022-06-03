@@ -81,11 +81,16 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
     private var framesPerSecond = 0
 
     // To keep the latest images and its metadata.
-    @GuardedBy("this") private var latestImage: ByteBuffer? = null
-    @GuardedBy("this") private var latestImageMetaData: FrameMetadata? = null
+    @GuardedBy("this")
+    private var latestImage: ByteBuffer? = null
+    @GuardedBy("this")
+    private var latestImageMetaData: FrameMetadata? = null
+
     // To keep the images and metadata in process.
-    @GuardedBy("this") private var processingImage: ByteBuffer? = null
-    @GuardedBy("this") private var processingMetaData: FrameMetadata? = null
+    @GuardedBy("this")
+    private var processingImage: ByteBuffer? = null
+    @GuardedBy("this")
+    private var processingMetaData: FrameMetadata? = null
 
     init {
         fpsTimer.scheduleAtFixedRate(
@@ -171,7 +176,13 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
                 )
                     .setRotation(frameMetadata.rotation)
                     .build()
-            requestDetectInImage(mlImage, graphicOverlay, bitmap, /* shouldShowFps= */ true, frameStartMs)
+            requestDetectInImage(
+                mlImage,
+                graphicOverlay,
+                bitmap, /* shouldShowFps= */
+                true,
+                frameStartMs
+            )
                 .addOnSuccessListener(executor) { processLatestImage(graphicOverlay) }
 
             // This is optional. Java Garbage collection can also close it eventually.
@@ -208,7 +219,8 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
 
         if (isMlImageEnabled(graphicOverlay.context)) {
             val mlImage =
-                MediaMlImageBuilder(image.image!!).setRotation(image.imageInfo.rotationDegrees).build()
+                MediaMlImageBuilder(image.image!!).setRotation(image.imageInfo.rotationDegrees)
+                    .build()
             requestDetectInImage(
                 mlImage,
                 graphicOverlay,
@@ -330,7 +342,7 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
                     if (originalCameraImage != null) {
                         graphicOverlay.add(CameraImageGraphic(graphicOverlay, originalCameraImage))
                     }
-                    this@VisionProcessorBase.onSuccess(results, graphicOverlay)
+                    this@VisionProcessorBase.onSuccess(results, graphicOverlay, originalCameraImage)
 //                        graphicOverlay.add(
 //                            InferenceInfoGraphic(
 //                                graphicOverlay,
@@ -393,7 +405,11 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
         )
     }
 
-    protected abstract fun onSuccess(results: T, graphicOverlay: GraphicOverlay)
+    protected abstract fun onSuccess(
+        results: T,
+        graphicOverlay: GraphicOverlay,
+        originalCameraImage: Bitmap?
+    )
 
     protected abstract fun onFailure(e: Exception)
 

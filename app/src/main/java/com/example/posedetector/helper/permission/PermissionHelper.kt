@@ -55,7 +55,7 @@ class PermissionHelper(private val activity: Activity) {
             }
         }
         if (arrayListPermission!!.size <= 0) {
-            runTimePermissionListener!!.permissionGranted()
+            this.runTimePermissionListener!!.permissionGranted()
             return
         }
         arrayPermissions = arrayOfNulls(arrayListPermission!!.size)

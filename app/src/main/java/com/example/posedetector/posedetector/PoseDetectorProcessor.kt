@@ -17,6 +17,7 @@
 package com.example.posedetector.posedetector
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.util.Log
 import com.example.posedetector.VisionProcessorBase
 import com.example.posedetector.helper.utils.GraphicOverlay
@@ -100,7 +101,7 @@ class PoseDetectorProcessor(
 
     override fun onSuccess(
         poseWithClassification: PoseWithClassification,
-        graphicOverlay: GraphicOverlay
+        graphicOverlay: GraphicOverlay, originalCameraImage: Bitmap?
     ) {
         poseDetectorSuccession?.let { it(poseWithClassification.pose) }
     }
